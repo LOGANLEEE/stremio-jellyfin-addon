@@ -1,5 +1,6 @@
 // Acceptance checks for plan.md AC0..AC18. Run against the real add-on and the real Jellyfin library.
 import http from 'node:http';
+import https from 'node:https';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -278,6 +279,33 @@ const checks = {
       const r = await req(`${BASE}/${t}/stream/movie/${d.movie.ProviderIds.Imdb}.json`, { headers: { Host: host } });
       const u = json(r).streams[0].url;
       assert(u.startsWith(`http://${host}/`), `url ${u.split('/').slice(0, 3).join('/')} for Host ${host}`);
+    }
+  },
+  async AC19() {
+    // Jellyfin behind HTTPS and a base path (reverse proxy): the add-on must use TLS and keep the prefix.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sja-tls-'));
+    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', `${dir}/k.pem`, '-out', `${dir}/c.pem`, '-days', '1', '-subj', '/CN=127.0.0.1'], { stdio: 'ignore' });
+    const seen = [];
+    const srv = https.createServer({ key: fs.readFileSync(`${dir}/k.pem`), cert: fs.readFileSync(`${dir}/c.pem`) }, (q, s) => {
+      seen.push({ url: q.url, auth: q.headers.authorization });
+      const ok = q.url.startsWith('/jf/Items?');
+      s.writeHead(ok ? 200 : 404, { 'Content-Type': 'application/json' });
+      s.end(JSON.stringify({ Items: [{ Id: 'a'.repeat(32), Name: 'Tls Movie', Type: 'Movie', ProductionYear: 2020, ProviderIds: { Imdb: 'tt0000001' } }] }));
+    });
+    await new Promise(r => srv.listen(0, '127.0.0.1', r));
+    const dummyKey = tmpFile('dummy-key-for-tls-test', 0o600);
+    const a = spawnAddon({ PORT: '8744', BIND_ADDRESS: '127.0.0.1', TOKEN_FILE: tmpFile('t'.repeat(64), 0o600), JELLYFIN_KEY_FILE: dummyKey, JELLYFIN_URL: `https://127.0.0.1:${srv.address().port}/jf/`, NODE_TLS_REJECT_UNAUTHORIZED: '0', REFRESH_SECONDS: '600' });
+    try {
+      const m = await waitFor(async () => { const j = json(await req(`http://127.0.0.1:8744/${'t'.repeat(64)}/catalog/movie/jf-movies.json`)); return j.metas.length ? j.metas : null; }, 10000);
+      assert(m && m[0].name === 'Tls Movie', 'catalog did not come through https with base path /jf: ' + a.out().slice(0, 200));
+      assert(seen.every(x => x.url.startsWith('/jf/')), 'a request lost the /jf prefix: ' + seen.map(x => x.url).join(' '));
+      assert(seen[0].auth === 'MediaBrowser Token="dummy-key-for-tls-test"', 'Authorization header missing over https');
+    } finally { a.child.kill(); srv.close(); }
+  },
+  async AC20() {
+    for (const kind of ['constructor', '__proto__', 'toString']) {
+      const r = await addon(`/img/${'0'.repeat(32)}/${kind}`);
+      assert(r.status === 404, `img kind ${kind} returned ${r.status}, want 404`);
     }
   },
   async AC17() {

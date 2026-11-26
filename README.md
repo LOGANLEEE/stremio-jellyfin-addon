@@ -96,7 +96,7 @@ Environment variables (or a `KEY=VALUE` file, see `.env.example`):
 |---|---|---|
 | `BIND_ADDRESS` | `127.0.0.1` | Address to listen on. Use your LAN address, never `0.0.0.0`. |
 | `PORT` | `8796` | Listen port |
-| `JELLYFIN_URL` | `http://127.0.0.1:8096` | Jellyfin base URL |
+| `JELLYFIN_URL` | `http://127.0.0.1:8096` | Jellyfin base URL. `https://` and a base path (`https://host/jellyfin`) are supported. |
 | `JELLYFIN_KEY_FILE` | `~/.config/stremio-jellyfin-addon/jellyfin-key` | File with the Jellyfin API key (mode 600) |
 | `TOKEN_FILE` | `~/.config/stremio-jellyfin-addon/token` | File with the add-on token (mode 600) |
 | `REFRESH_SECONDS` | `600` | Index refresh interval |

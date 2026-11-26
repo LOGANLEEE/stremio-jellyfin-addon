@@ -23,5 +23,7 @@
 | AC16 | Stream URLs are built from the request `Host` header |
 | AC17 | The add-on exits non-zero and names the file when the token or key file is missing, empty, or not mode 600 |
 | AC18 | An episode id with no Jellyfin match returns an empty list |
+| AC19 | Jellyfin behind HTTPS and a base path (`https://host/jf/`): the add-on uses TLS, keeps the path prefix and sends the Authorization header |
+| AC20 | An image kind such as `constructor` or `__proto__` returns 404 |
 
 Run one check: `ADDON_HOST=<lan address> node check.mjs AC9`.

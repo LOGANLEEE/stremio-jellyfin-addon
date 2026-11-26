@@ -1,5 +1,6 @@
 'use strict';
 const http = require('node:http');
+const https = require('node:https');
 const fs = require('node:fs');
 const os = require('node:os');
 const crypto = require('node:crypto');
@@ -39,7 +40,12 @@ const AUTH = { Authorization: `MediaBrowser Token="${KEY}"` };
 // ---- Jellyfin ----
 function jfRequest(path, { headers = {}, timeout = 5000 } = {}) {
   return new Promise((resolve, reject) => {
-    const r = http.request({ host: JELLYFIN.hostname, port: JELLYFIN.port || 80, path, method: 'GET', headers: { ...AUTH, ...headers } }, resolve);
+    const secure = JELLYFIN.protocol === 'https:';
+    const r = (secure ? https : http).request({
+      host: JELLYFIN.hostname, port: JELLYFIN.port || (secure ? 443 : 80), method: 'GET',
+      path: JELLYFIN.pathname.replace(/\/+$/, '') + path, // keep a reverse-proxy base path such as /jellyfin
+      headers: { ...AUTH, ...headers },
+    }, resolve);
     r.setTimeout(timeout, () => r.destroy(new Error('Jellyfin timeout')));
     r.on('error', reject);
     r.end();
@@ -161,7 +167,7 @@ function play(req, res, id) {
 }
 const IMG_QUERY = { Primary: 'maxHeight=600&quality=85', Backdrop: 'maxWidth=1280&quality=80' };
 function image(req, res, id, kind) {
-  if (!IMG_QUERY[kind]) return send(res, 404, 'not found');
+  if (!Object.hasOwn(IMG_QUERY, kind)) return send(res, 404, 'not found');
   return proxy(req, res, `/Items/${id}/Images/${kind}?${IMG_QUERY[kind]}`, {}, 10000);
 }
 
