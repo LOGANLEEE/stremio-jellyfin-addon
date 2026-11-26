@@ -1,0 +1,15 @@
+{
+  "name": "stremio-jellyfin-addon",
+  "version": "1.0.0",
+  "description": "Stremio add-on that plays your own Jellyfin library (LAN only, API key stays server-side)",
+  "license": "MIT",
+  "author": "Logan Lee",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node check.mjs"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["stremio", "stremio-addon", "jellyfin", "self-hosted"],
+  "repository": { "type": "git", "url": "git+https://github.com/LOGANLEEE/stremio-jellyfin-addon.git" }
+}

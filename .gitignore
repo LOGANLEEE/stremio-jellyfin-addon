@@ -1,0 +1,11 @@
+node_modules/
+*.log
+token
+jellyfin-key
+*jellyfin-key*
+.env
+# local only: private spec, device screenshots (show a personal library), personal smoke test
+.claude/local/
+evidence/
+plan.md
+drive.sh
